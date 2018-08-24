@@ -103,13 +103,13 @@
 <p>最后找到了stackoverflow的一个类似问题，试了下，成功了，特记录一下</p>
 <p>StackOverflow上的问题：<br><a href="https://stackoverflow.com/questions/40871054/inputstream-giving-null-data-in-messagebodyreader-jersey" target="_blank" rel="noopener">inputstream-giving-null-data-in-messagebodyreader-jersey</a></p>
 <p>上面的不能直接用，提供下我写的：<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Configuration</span>  </span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">FilterConfig</span>  </span>&#123;  </span><br><span class="line">    <span class="meta">@Bean</span>  </span><br><span class="line">    <span class="function"><span class="keyword">public</span> HiddenHttpMethodFilter <span class="title">hiddenHttpMethodFilter</span><span class="params">()</span> </span>&#123;  </span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> MyHiddenHttpMethodFilter();  </span><br><span class="line">    &#125;  </span><br><span class="line">  </span><br><span class="line">    <span class="class"><span class="keyword">class</span> <span class="title">MyHiddenHttpMethodFilter</span> <span class="keyword">extends</span> <span class="title">HiddenHttpMethodFilter</span> </span>&#123;  </span><br><span class="line">        <span class="meta">@Override</span>  </span><br><span class="line">        <span class="function"><span class="keyword">protected</span> <span class="keyword">void</span> <span class="title">doFilterInternal</span><span class="params">(HttpServletRequest request, HttpServletResponse response,  </span></span></span><br><span class="line"><span class="function"><span class="params">                                        FilterChain filterChain)</span> <span class="keyword">throws</span> ServletException, IOException </span>&#123;  </span><br><span class="line">            <span class="keyword">if</span> (<span class="string">"POST"</span>.equals(request.getMethod())  </span><br><span class="line">                    &amp;&amp; MediaType.APPLICATION_FORM_URLENCODED.equals(request.getContentType()))&#123;  </span><br><span class="line">                <span class="comment">//Skip this filter and call the next filter in the chain.  </span></span><br><span class="line">                filterChain.doFilter(request, response);  </span><br><span class="line">            &#125; <span class="keyword">else</span> &#123;  </span><br><span class="line">                <span class="comment">//Continue with processing this filter.  </span></span><br><span class="line">                <span class="keyword">super</span>.doFilterInternal(request, response, filterChain);  </span><br><span class="line">            &#125;  </span><br><span class="line">        &#125;  </span><br><span class="line">    &#125;  </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
-<p>配置好后直接就可以各种花式读到body了。。。</p>
+<p>配置好后直接就可以各种花式读到body了。。。:joy:</p>
 <p>后记：好奇为什么springboot会配这样一个HiddenHttpMethodFilter<br>查了下，原来是为了将form表单扩展，使之支持DELETE PUT。<br>说是在这个filter里将原始POST替换为form表单中的对应的，再传到后面处理。<br>具体没看了</p>
 
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://lnxts.com/issue/jersey-body-null.html" data-id="cjl7soj970003v4d8jvwhbpgt" class="article-share-link">Share</a>
+      <a data-url="http://lnxts.com/issue/jersey-body-null.html" data-id="cjl7tl35q0003usd83tr1ycpu" class="article-share-link">Share</a>
       
       
   <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/issue/">issue</a></li></ul>
@@ -158,7 +158,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://lnxts.com/hello-world.html" data-id="cjl7soj890000v4d89pgvvro3" class="article-share-link">Share</a>
+      <a data-url="http://lnxts.com/hello-world.html" data-id="cjl7tl3520001usd8vf4ev1l5" class="article-share-link">Share</a>
       
       
     </footer>
@@ -200,7 +200,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://lnxts.com/kafka/01-kafka-install.html" data-id="cjl7soj950002v4d8bovmf99m" class="article-share-link">Share</a>
+      <a data-url="http://lnxts.com/kafka/01-kafka-install.html" data-id="cjl7tl35o0002usd8rnav1dw3" class="article-share-link">Share</a>
       
       
   <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Kafka笔记/">Kafka笔记</a></li></ul>
@@ -284,7 +284,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://lnxts.com/docker-springboot.html" data-id="cjl7soj8f0001v4d8gtdvifo8" class="article-share-link">Share</a>
+      <a data-url="http://lnxts.com/docker-springboot.html" data-id="cjl7tl34w0000usd8b3mkjtuu" class="article-share-link">Share</a>
       
       
     </footer>
