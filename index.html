@@ -66,6 +66,61 @@
       <div class="outer">
         <section id="main">
   
+    <article id="post-issue/jersey-body-null" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/issue/jersey-body-null.html" class="article-date">
+  <time datetime="2018-08-24T09:07:58.000Z" itemprop="datePublished">2018-08-24</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/issue/jersey-body-null.html">jersey获取inputstream body为空问题</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>在处理一个第三方加密回调时，需要读取body的byte内容，用了springMVC后，字节数不对，后因大部分API使用jersey, 故决定用jersey, 但jersey中想要获取request的body时遇到一直无法获取的问题</p>
+<p>取body的多种方式</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Post</span> <span class="comment">//直接注入body(也可以是String)  </span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">doSomething</span><span class="params">(<span class="keyword">byte</span>[] body)</span>  </span></span><br><span class="line"><span class="function">@Post  <span class="comment">//直接注入inputStream后读取  </span></span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">doSomething</span><span class="params">(InputStream inputStream)</span>  </span></span><br><span class="line"><span class="function">@Post  <span class="comment">//从request读inputStream再读取  </span></span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">doSomething</span><span class="params">(@Context HttpServletRequest request)</span></span></span><br></pre></td></tr></table></figure>
+<p>结果试了各种方式，要么读不到，要么报下面这些错。。。</p>
+<pre>
+<font color="red">Only resource methods using @FormParam will work as expected</font>
+<font color="red">getInputStream() has already been called for this request</font>
+<font color="red">The resource configuration is not modifiable in this context. </font>
+</pre>
+
+
+<p>跟据经验InputStream只能被取一次，在配置对的情况下，还取不到大概都是这个问题，且报错也有该提示，然后主要方向就是这个了，推测是某个filter先用了inputStream，一看Springboot 自动注入了8个。。。表示想一个个找会很痛苦了</p>
+<p>最后找到了stackoverflow的一个类似问题，试了下，成功了，特记录一下</p>
+<p>StackOverflow上的问题：<br><a href="https://stackoverflow.com/questions/40871054/inputstream-giving-null-data-in-messagebodyreader-jersey" target="_blank" rel="noopener">inputstream-giving-null-data-in-messagebodyreader-jersey</a></p>
+<p>上面的不能直接用，提供下我写的：<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Configuration</span>  </span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">FilterConfig</span>  </span>&#123;  </span><br><span class="line">    <span class="meta">@Bean</span>  </span><br><span class="line">    <span class="function"><span class="keyword">public</span> HiddenHttpMethodFilter <span class="title">hiddenHttpMethodFilter</span><span class="params">()</span> </span>&#123;  </span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> MyHiddenHttpMethodFilter();  </span><br><span class="line">    &#125;  </span><br><span class="line">  </span><br><span class="line">    <span class="class"><span class="keyword">class</span> <span class="title">MyHiddenHttpMethodFilter</span> <span class="keyword">extends</span> <span class="title">HiddenHttpMethodFilter</span> </span>&#123;  </span><br><span class="line">        <span class="meta">@Override</span>  </span><br><span class="line">        <span class="function"><span class="keyword">protected</span> <span class="keyword">void</span> <span class="title">doFilterInternal</span><span class="params">(HttpServletRequest request, HttpServletResponse response,  </span></span></span><br><span class="line"><span class="function"><span class="params">                                        FilterChain filterChain)</span> <span class="keyword">throws</span> ServletException, IOException </span>&#123;  </span><br><span class="line">            <span class="keyword">if</span> (<span class="string">"POST"</span>.equals(request.getMethod())  </span><br><span class="line">                    &amp;&amp; MediaType.APPLICATION_FORM_URLENCODED.equals(request.getContentType()))&#123;  </span><br><span class="line">                <span class="comment">//Skip this filter and call the next filter in the chain.  </span></span><br><span class="line">                filterChain.doFilter(request, response);  </span><br><span class="line">            &#125; <span class="keyword">else</span> &#123;  </span><br><span class="line">                <span class="comment">//Continue with processing this filter.  </span></span><br><span class="line">                <span class="keyword">super</span>.doFilterInternal(request, response, filterChain);  </span><br><span class="line">            &#125;  </span><br><span class="line">        &#125;  </span><br><span class="line">    &#125;  </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>配置好后直接就可以各种花式读到body了。。。</p>
+<p>后记：好奇为什么springboot会配这样一个HiddenHttpMethodFilter<br>查了下，原来是为了将form表单扩展，使之支持DELETE PUT。<br>说是在这个filter里将原始POST替换为form表单中的对应的，再传到后面处理。<br>具体没看了</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://lnxts.com/issue/jersey-body-null.html" data-id="cjl7soj970003v4d8jvwhbpgt" class="article-share-link">Share</a>
+      
+      
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/issue/">issue</a></li></ul>
+
+    </footer>
+  </div>
+  
+</article>
+
+
+  
     <article id="post-hello-world" class="article article-type-post" itemscope itemprop="blogPost">
   <div class="article-meta">
     <a href="/hello-world.html" class="article-date">
@@ -103,7 +158,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://lnxts.com/hello-world.html" data-id="cjjdyhmeh000184d8urzt2oov" class="article-share-link">Share</a>
+      <a data-url="http://lnxts.com/hello-world.html" data-id="cjl7soj890000v4d89pgvvro3" class="article-share-link">Share</a>
       
       
     </footer>
@@ -145,7 +200,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://lnxts.com/kafka/01-kafka-install.html" data-id="cjjdyhmez000284d8ojye2714" class="article-share-link">Share</a>
+      <a data-url="http://lnxts.com/kafka/01-kafka-install.html" data-id="cjl7soj950002v4d8bovmf99m" class="article-share-link">Share</a>
       
       
   <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Kafka笔记/">Kafka笔记</a></li></ul>
@@ -229,7 +284,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://lnxts.com/docker-springboot.html" data-id="cjjdyhmdq000084d8y1jfxre0" class="article-share-link">Share</a>
+      <a data-url="http://lnxts.com/docker-springboot.html" data-id="cjl7soj8f0001v4d8gtdvifo8" class="article-share-link">Share</a>
       
       
     </footer>
@@ -251,7 +306,7 @@
   <div class="widget-wrap">
     <h3 class="widget-title">标签</h3>
     <div class="widget">
-      <ul class="tag-list"><li class="tag-list-item"><a class="tag-list-link" href="/tags/Kafka笔记/">Kafka笔记</a></li></ul>
+      <ul class="tag-list"><li class="tag-list-item"><a class="tag-list-link" href="/tags/Kafka笔记/">Kafka笔记</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/issue/">issue</a></li></ul>
     </div>
   </div>
 
@@ -261,7 +316,7 @@
   <div class="widget-wrap">
     <h3 class="widget-title">标签云</h3>
     <div class="widget tagcloud">
-      <a href="/tags/Kafka笔记/" style="font-size: 10px;">Kafka笔记</a>
+      <a href="/tags/Kafka笔记/" style="font-size: 10px;">Kafka笔记</a> <a href="/tags/issue/" style="font-size: 10px;">issue</a>
     </div>
   </div>
 
@@ -270,7 +325,7 @@
   <div class="widget-wrap">
     <h3 class="widget-title">归档</h3>
     <div class="widget">
-      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/06/">六月 2018</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/10/">十月 2017</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/07/">七月 2017</a></li></ul>
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/08/">八月 2018</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/06/">六月 2018</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/10/">十月 2017</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/07/">七月 2017</a></li></ul>
     </div>
   </div>
 
@@ -281,6 +336,10 @@
     <h3 class="widget-title">最新文章</h3>
     <div class="widget">
       <ul>
+        
+          <li>
+            <a href="/issue/jersey-body-null.html">jersey获取inputstream body为空问题</a>
+          </li>
         
           <li>
             <a href="/hello-world.html">Hello World</a>
